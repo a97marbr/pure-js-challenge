@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script>
+		const HEIGHT=600;
+		const WIDTH=600;
+
+		var canvas;
+		var ctx;
+		var isRunning=false;
+
+		
+
+		function setup()
+		{
+			canvas = document.getElementById('canvas');
+			ctx = canvas.getContext('2d');
+			ctx.canvas.height=HEIGHT;
+			ctx.canvas.width=WIDTH;
+
+			render();
+		}
+
+		function render()
+		{
+				ctx.clearRect(0,0,WIDTH,HEIGHT);
+				ctx.translate(WIDTH/2,HEIGHT);
+
+				drawBranch(100,0);
+
+				if(isRunning){
+						requestAnimationFrame(render);
+				}
+		}
+
+		function drawBranch(len, angle)
+		{
+				ctx.beginPath();
+				ctx.moveTo(0,0);
+				ctx.rotate(angle);
+				ctx.lineTo(0,-len);				
+				ctx.stroke();
+				ctx.translate(0,-len);
+
+				if(len>5){
+						var min=Math.PI/12; 
+						var max=Math.PI/6;
+						var random_left = Math.random() * (+max - +min) + +min; 	
+						var random_right = Math.random() * (+max - +min) + +min; 	
+
+						ctx.save();					
+						drawBranch(len*0.70, -random_left );
+						ctx.restore();
+						ctx.save();
+						drawBranch(len*0.70, random_right );
+						ctx.restore();
+				}
+		}
+	</script>
+</head>
+<body onload="setup();">
+	<body>
+		<canvas id="canvas" style="border:2px dotted pink;"></canvas>
+	</body>
+</body>
+</html>
