@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title></title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="">
+	</head>
+	<style>
+		.canvas-example {
+			border:2px dotted pink;
+			box-shadow:4px 4px 10px #000;
+		}
+	</style>
+	<script>
+		/* 
+		A simple illustration of Fourier series convergence
+		https://en.wikipedia.org/wiki/Fourier_series#Convergence
+		
+		Inspired by: https://www.youtube.com/watch?v=Mm2eYfj0SgA
+
+		Template HTML: https://gist.github.com/a97marbr/842a9b2091e6c4ec67f4af6d18527a3d
+
+		*/
+		let ctx=null;
+		let canvas=null;
+		let isRunning=true;
+		let WIDTH=800;
+		let HEIGHT=500;
+		let FRAME_CYCLE=0; // In ms, 0 if no frame throttle should be used
+		let STOP_TIME=0; // In ms, 0 if no stop time should be used
+		let lastTime=0;
+		let totalTime=0;
+		let startTime=performance.now();
+		let endTime=0;
+		let tick=0.05;
+		let angle=0;
+		let RADIUS=100;
+		let wave=[];
+
+		//
+		// The setup function. Run once at load of page.
+		//
+		function setup()
+		{
+			console.log("==> setup() started")
+			canvas = document.getElementById('canvas');
+			ctx = canvas.getContext('2d');
+			ctx.canvas.width  = WIDTH;
+			ctx.canvas.height = HEIGHT;
+
+			ctx.translate(WIDTH/4,HEIGHT/2);
+
+			window.requestAnimationFrame(render);
+			console.log("==> setup() finished");
+		}
+
+		//
+		// The render function. Run once per frame
+		//
+		function render(time)
+		{
+			let delta=time-lastTime;
+			//update(delta);
+
+			if (FRAME_CYCLE > 0 && delta < FRAME_CYCLE) {
+				requestAnimationFrame(render);
+				return;
+			}
+			
+			lastTime=time;
+			totalTime+=delta;
+			if(STOP_TIME>0 && totalTime>STOP_TIME){
+				isRunning=false;
+			}
+
+			//console.log("==> rendered @ ",totalTime,"ms");
+			
+			// Enter drawing code here ...
+			ctx.clearRect(-WIDTH/4, -HEIGHT/2, WIDTH+WIDTH/4, HEIGHT+HEIGHT/2);
+			ctx.lineWidth = 2;
+			
+			angle+=tick;
+			let x=0;
+			let y=0;
+			let n=0;
+			
+			for(let j=0;j<10;j++){
+					let prevx=x;
+					let prevy=y;
+
+					// Square Wave
+					n=j*2+1;
+					r=50*(4/(n*Math.PI));
+					x+=r* Math.cos(n*angle);
+					y+=r* Math.sin(n*angle);
+
+					// Saw tooth wave
+					// n=j+1;
+					// if(n%2===1)n*=-1;
+					// let r=RADIUS*(2/(n*Math.PI));
+					// x+=r* Math.cos(Math.abs(n)*angle);
+					// y+=r* Math.sin(Math.abs(n)*angle);
+
+
+					ctx.save();
+					ctx.strokeStyle = "#00000060";
+					ctx.beginPath();
+					ctx.arc(prevx, prevy, Math.abs(r), 0, Math.PI * 2, true);
+					ctx.stroke();
+					ctx.restore();
+
+					ctx.beginPath();
+					ctx.moveTo(prevx, prevy);
+					ctx.lineTo(x,y);
+					ctx.stroke();
+
+					// ctx.beginPath();
+					// ctx.arc(x, y, 4, 0, Math.PI * 2, true);
+					// ctx.fill();
+
+			}
+			wave.unshift(y);
+			if(wave.length>800){
+				wave.pop();
+			}
+
+			ctx.save();
+			ctx.beginPath();
+			ctx.moveTo(x,y);			
+			ctx.lineTo(100,wave[0]);
+			ctx.stroke();
+			ctx.translate(100,0);
+			ctx.beginPath();
+			for(let i=0;i<wave.length;i++){
+					ctx.lineTo(i,wave[i]);
+			}
+			ctx.stroke();
+			ctx.restore();
+
+
+			if(isRunning){
+				window.requestAnimationFrame(render);
+			}else{
+				endTime=performance.now();
+				console.log("Finished rendering after ", endTime-startTime, " ms")
+			}
+		}
+
+		//
+		// The update function. Run once per FRAME_CYCLE
+		//
+		function update(delta)
+		{
+			//console.log("==> update(), delta ",delta,"ms");
+		}
+	</script>
+	<body onload="setup();">
+		<h4>Canvas example</h4>
+		<canvas id="canvas" class="canvas-example"></canvas>
+	</body>
+</html>
