@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title></title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="">
+	</head>
+	<style>
+		.canvas-example {
+			border:2px dotted pink;
+			box-shadow:4px 4px 10px #000;
+		}
+	</style>
+	<script>
+		let ctx=null;
+		let canvas=null;
+		let isRunning=true;
+		let WIDTH=500;
+		let HEIGHT=500;
+		let FRAME_CYCLE=50;
+		let STOP_TIME=0; // In ms, 0 if no stop time should be used
+		let lastTime=0;
+		let totalTime=0;
+		let startTime=performance.now();
+		let endTime=0;
+		const W=4;
+		const H=4;
+		let gameboard=[
+			[0,0,0,0],
+			[0,0,0,0],
+			[0,0,0,0],
+			[0,0,0,0]
+		]
+
+		const tileSize = WIDTH/4;
+
+		//
+		// The setup function. Run once at load of page.
+		//
+		function setup()
+		{
+			console.log("==> setup() started")
+			window.addEventListener("keyup", event => {
+				if (event.isComposing || event.keyCode === 229) {
+					return;
+				}
+				// do something
+				if( event.keyCode === 37){
+					//alert("LEFT")
+					slide('l');
+					addNumber();
+				}else if(event.keyCode === 38){
+					//alert("UP")
+					transpose();
+					slide('u');
+					transpose();
+					addNumber();
+				}else if(event.keyCode === 39){
+					//alert("RIGHT")
+					mirror();
+					slide('r');
+					mirror();
+					addNumber();
+				}else if(event.keyCode === 40){
+					//alert("DOWN")
+					transpose();
+					mirror();
+					slide('d');
+					mirror();
+					transpose();
+					addNumber();
+				}
+			});
+			canvas = document.getElementById('canvas');
+			ctx = canvas.getContext('2d');
+			ctx.canvas.width  = HEIGHT;
+			ctx.canvas.height = WIDTH;
+
+			// Create gameboard W*H
+			for(let i=0;i<W;i++){
+					for(let j=0;j<H;j++){
+							ctx.strokeStyle='rgb(225,225,225,0.7)';
+							ctx.lineWidth=4;
+							ctx.fillStyle='rgba('+getRandomInt(0,255)+','+getRandomInt(0,255)+','+getRandomInt(0,255)+',0.5)';
+							ctx.fillRect(i*tileSize,j*tileSize, tileSize, tileSize);
+							ctx.strokeRect(i*tileSize,j*tileSize, tileSize, tileSize);
+					}
+			}
+			addNumber();
+			addNumber();
+			window.requestAnimationFrame(render);
+			console.log("==> setup() finished");
+		}
+
+		function rotate()
+		{
+			gameboard=gameboard[0].map((_, colIndex) => gameboard.map(row => row[colIndex]));
+			gameboard=gameboard.map(function(arr){return arr.reverse();});
+		}
+
+		function transpose()
+		{
+			gameboard=gameboard[0].map((_, colIndex) => gameboard.map(row => row[colIndex]));
+		}
+
+		function mirror()
+		{
+			gameboard=gameboard.map(function(arr){return arr.reverse();});
+		}
+
+		function addNumber()
+		{
+				let free=[];
+				for(let i=0;i<W;i++){
+					for(let j=0;j<H;j++){
+						let val=gameboard[i][j];
+						if(val===0){
+								free.push([i,j]);
+						}
+					}
+				}
+				if(free.length>0){
+					let selected=getRandomInt(0,free.length-1);
+					console.log(selected)
+					let x=free[selected][0];
+					let y=free[selected][1];
+					if(Math.random()<0.5){
+							gameboard[x][y]=2;
+					}else{
+							gameboard[x][y]=4;
+					}
+				}else{
+					alert("Game over!");
+				}
+		}
+
+		function slide()
+		{
+			for(let i=0;i<gameboard.length;i++){
+				let row=gameboard[i];
+			
+				let cnt=0;
+				let idx=0;
+				while(cnt<3){
+					console.log(row)
+					if(row[idx]===0){
+							row.splice(idx,1);
+							row.push(0);
+							cnt++;
+					}else if(row[idx]!==0 && row[idx+1]===0){
+							row.splice(idx+1,1);
+							row.push(0);
+							cnt++;
+					}else{
+							if(row[idx]===row[idx+1]){
+									row[idx]=row[idx]*2;
+									row.splice(idx+1,1);
+									row.push(0);
+									idx++;
+									cnt++;
+							}else{
+									idx++;
+									cnt++;
+							}
+					}
+				}
+				console.log("Finished",row)
+			}
+		}
+
+		function s(dir)
+		{
+				let merged=[];
+				// create the rows to slide.
+				// We want 4 separate rows from the gameboard
+				/*
+					[ 1][ 2][ 3][ 4]
+					[ 5][ 6][ 7][ 8]
+					[ 9][10][11][12]
+					[13][14][15][16]
+				*/
+				let rows=[];
+				if('r'){
+						// First row is: [ 4][ 3][ 2][ 1]
+						let row=[];
+						for(let i=gameboard.length-1;i>=0;i--){
+								row.push({idx:i,val:gameboard[i]});
+								if(i%W===0){
+										rows.push(row);
+										row=[];
+								}
+						}
+						console.table(rows);
+				}else if('l'){
+						// First row is: [ 1][ 2][ 3][ 4]
+						let row=[];
+						for(let i=0;i<gameboard.length;i++){
+								row.push({idx:i,val:gameboard[i]});
+								if(i%W===0){
+										rows.push(row);
+										row=[];
+								}
+						}
+						console.table(rows);
+					}else if('u'){
+						// First row is: [ 1][ 5][ 9][13]
+						let row=[];
+						for(let i=gameboard.length-1;i>=0;i--){
+								row.push({idx:i,val:gameboard[i]});
+								if(i%W===0){
+										rows.push(row);
+										row=[];
+								}
+						}
+						console.table(rows);
+				}else if('d'){
+						// First row is: [13][ 9][ 5][ 1]
+				}else{
+						alert('Illegal move!')
+				}
+
+				// for(let row=0;i<W;row++){
+				// 	let col=W-1;
+				// 	while(col>0){
+				// 			let idx=row*W+col;
+				// 			if(gameboard[idx]>0){
+
+				// 			}else{
+
+				// 			}
+				// 	}
+				// }
+
+		}
+
+		//
+		// The render function. Run once per frame
+		//
+		function render(time)
+		{
+			let delta=time-lastTime;
+			update(delta);
+
+			if ( delta < FRAME_CYCLE) {
+				requestAnimationFrame(render);
+				return;
+			}
+			
+			lastTime=time;
+			totalTime+=delta;
+			if(STOP_TIME>0 && totalTime>STOP_TIME){
+				isRunning=false;
+			}
+
+			//console.log("==> rendered @ ",totalTime,"ms");
+			
+			// Enter drawing code here ...
+
+			for(let y=0;y<W;y++){
+					for(let x=0;x<H;x++){
+						ctx.strokeStyle='rgb(80,80,80,0.7)';
+						ctx.lineWidth=4;
+						ctx.fillStyle='rgba(225,225,225,0.5)';
+						ctx.fillRect(x*tileSize,y*tileSize, tileSize, tileSize);
+						ctx.strokeRect(x*tileSize,y*tileSize, tileSize, tileSize);
+						if(gameboard[y][x]>0){
+							ctx.font = '48px san-serif';
+							ctx.textAlign = 'center';
+							ctx.textBaseline = 'middle';
+							ctx.strokeText(""+gameboard[y][x],x*tileSize+(tileSize/2),y*tileSize+(tileSize/2));
+						}
+					}
+			}
+
+			if(isRunning){
+				window.requestAnimationFrame(render);
+			}else{
+				endTime=performance.now();
+				console.log("Finished rendering after ", endTime-startTime, " ms")
+			}
+		}
+
+		//
+		// The update function. Run once per FRAME_CYCLE
+		//
+		function update(delta)
+		{
+			//console.log("==> update(), delta ",delta,"ms");
+		}
+
+		function getRandomInt(min, max) {
+				min = Math.ceil(min);
+				max = Math.floor(max);
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+		}
+	</script>
+	<body onload="setup();">
+		<h4>Canvas example</h4>
+		<canvas id="canvas" class="canvas-example"></canvas>
+	</body>
+</html>
